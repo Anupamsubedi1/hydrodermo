@@ -12,7 +12,7 @@ import { createWaterSurfaces } from "./water";
 import { LOOK, SUN } from "./scene-config";
 
 export interface World {
-  update(progress: number, time: number, camera: T.PerspectiveCamera, aspect: number): void;
+  update(progress: number, time: number, camera: T.PerspectiveCamera, aspect: number, intro: number): void;
   render(): void;
   resize(width: number, height: number, pixelRatio: number): void;
   setQuality(quality: SceneQuality): void;
@@ -152,7 +152,8 @@ export async function buildWorld(
   // Stage 6: compile shaders off the critical path where the driver supports it.
   const path = new CameraPath();
   const pose: CameraPose = { position: new T.Vector3(), target: new T.Vector3(), fov: 42, roll: 0 };
-  path.poseAt(0, 0, pose);
+  // Compile against the establishing pose, which is the first frame shown.
+  path.poseAt(0, 0, pose, 0);
   applyPose(camera, pose, width / height);
   try {
     await renderer.compileAsync(scene, camera);
@@ -166,8 +167,8 @@ export async function buildWorld(
   let currentQuality = quality;
 
   return {
-    update(progress, time, cam, aspect) {
-      path.poseAt(progress, time, pose);
+    update(progress, time, cam, aspect, intro) {
+      path.poseAt(progress, time, pose, intro);
       applyPose(cam, pose, aspect);
       water.update(time);
       forest.update(time);

@@ -109,6 +109,18 @@ export interface CameraPose {
   roll: number;
 }
 
+/**
+ * Establishing pose the autoplay intro starts from: further up the valley and
+ * higher, looking down the river toward the dam. The intro eases from here to
+ * the progress-0 pose, so the sequence is already in motion before the reader
+ * touches the scroll wheel. The hero posters are captured at this pose so the
+ * poster-to-canvas handover is invisible.
+ */
+export const INTRO_POSE: Waypoint = wpLater(0, [-30, 74, -1010], [6, 8, -640], 38);
+function wpLater(at: number, p: [number, number, number], t: [number, number, number], fov: number): Waypoint {
+  return { at, position: [riverX(p[2]) + p[0], p[1], p[2]], target: [riverX(t[2]) + t[0], t[1], t[2]], fov };
+}
+
 export class CameraPath {
   private readonly positions: ArcSpline;
   private readonly targets: ArcSpline;
@@ -138,7 +150,11 @@ export class CameraPath {
     return { i, s: Math.max(0, Math.min(1, s)) };
   }
 
-  poseAt(progress: number, time: number, out: CameraPose): CameraPose {
+  /**
+   * @param intro 1 = fully on the scroll path; below 1 the pose is blended back
+   *   toward INTRO_POSE, which is what the autoplay opening animates.
+   */
+  poseAt(progress: number, time: number, out: CameraPose, intro = 1): CameraPose {
     const { i, s } = this.locate(progress);
     const lp = lerp(this.positions.pointLengths[i], this.positions.pointLengths[i + 1], s);
     const lt = lerp(this.targets.pointLengths[i], this.targets.pointLengths[i + 1], s);
@@ -155,6 +171,20 @@ export class CameraPath {
     const cross = this.a.x * this.b.z - this.a.z * this.b.x;
     const outdoor = 1 - smoothstep(0.62, 0.7, progress);
     out.roll = T.MathUtils.clamp(-cross * 5, -0.14, 0.14) * outdoor;
+
+    // Autoplay opening: ease in from the establishing pose. smoothstep keeps the
+    // arrival on the scroll path velocity-matched, so there is no visible seam.
+    if (intro < 1) {
+      const k = 1 - smoothstep(0, 1, T.MathUtils.clamp(intro, 0, 1));
+      out.position.x += (INTRO_POSE.position[0] - out.position.x) * k;
+      out.position.y += (INTRO_POSE.position[1] - out.position.y) * k;
+      out.position.z += (INTRO_POSE.position[2] - out.position.z) * k;
+      out.target.x += (INTRO_POSE.target[0] - out.target.x) * k;
+      out.target.y += (INTRO_POSE.target[1] - out.target.y) * k;
+      out.target.z += (INTRO_POSE.target[2] - out.target.z) * k;
+      out.fov += ((INTRO_POSE.fov ?? 38) - out.fov) * k;
+      out.roll *= 1 - k;
+    }
 
     // Sub-pixel handheld life.
     const hx = Math.sin(time * 0.7) * 0.05 + Math.sin(time * 1.9) * 0.02;

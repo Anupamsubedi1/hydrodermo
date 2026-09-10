@@ -22,10 +22,32 @@ npm run lint             # eslint (next/core-web-vitals + typescript)
 npm run typecheck        # tsc --noEmit
 npm test                 # node --test tests/**/*.test.ts
 npm run capture:posters  # regenerate hero posters + OG image from the live scene
+npm run build:logo       # rebuild the seal derivatives and favicon from source-assets/logo
 ```
 
 Node 20.9+ is required by Next 16. The tests use Node's built-in runner with TypeScript type stripping
 (Node 22.6+; developed on Node 25).
+
+## The opening
+
+The camera flies on its own before the reader touches anything. On load, the header, hero copy and stage
+chrome are held back and only a small "Skip intro" chip is shown, so the first seconds are pure picture. The
+camera eases from an establishing pose high up the valley onto the start of the scroll path over six seconds,
+then the interface fades in and scrolling takes over. Any wheel, touch, key or pointer input ends the opening
+immediately, and if the scene has not produced a frame within 3.5 seconds the copy is revealed over the poster
+instead, so the page is never wordless. Reduced motion skips the opening entirely.
+
+The opening and the scroll damper are both driven from real elapsed time rather than GSAP tweens. GSAP's lag
+smoothing advances animations by a fixed slice once frames run long, which stretches a six-second move into
+minutes on a slow renderer.
+
+## Brand
+
+The seal and wordmark come from the company's own published artwork, not a redraw. `npm run build:logo`
+rebuilds the derivatives from `source-assets/logo/`: the published seal is black line art on a faint disc, so
+the script masks by darkness rather than alpha and re-inks it in the company's red (`#b82830`, sampled from
+their horizontal lockup) for light backgrounds and in the site's off-white for dark ones. It also writes the
+favicon. If the company supplies a vector original, drop it in and the raster step can go.
 
 ## The scroll sequence
 
@@ -75,14 +97,16 @@ stages that yield to the browser between them.
 
 There is no photography or downloaded 3D asset in the project. The two hero posters and the social image are
 **screenshots of frame 0 of the real scene**, captured by `npm run capture:posters` against a running
-production server, so the poster → canvas swap is invisible. Regenerate them after changing the scene's
+production server. The capture holds the opening at its first frame, so the poster and the canvas show the
+same framing and the handover is invisible. Regenerate them after changing the scene's
 opening framing or lighting, and bump `ASSET_VERSION` in `lib/cinematic/assets.ts` if the filenames change.
 
 | File | Size | Budget |
 | --- | ---: | ---: |
-| `hero-desktop.v2.webp` (1920×1080) | 102 KB | ~300 KB |
-| `hero-mobile.v2.webp` (1080×1920) | 53 KB | 150–250 KB |
-| `app/opengraph-image.png` (1200×630) | 242 KB | — |
+| `hero-desktop.v2.webp` (1920×1080) | 199 KB | ~300 KB |
+| `hero-mobile.v2.webp` (1080×1920) | 82 KB | 150–250 KB |
+| `app/opengraph-image.png` (1200×630) | 287 KB | — |
+| `public/assets/brand/seal.v1.png` + off-white variant | 100 KB | — |
 
 If the client supplies photography later, it can replace the posters, and an approved Blender GLB can replace
 the procedural machinery in `components/cinematic/scene/machine.ts`.

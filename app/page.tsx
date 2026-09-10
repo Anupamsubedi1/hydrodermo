@@ -2,7 +2,6 @@ import { CinematicSection } from "@/components/cinematic/CinematicSection";
 import {
   ContactSection,
   DocumentsSection,
-  GallerySection,
   HighlightsSection,
   InvestorsSection,
   ProjectSection,
@@ -10,6 +9,7 @@ import {
 } from "@/components/site/DocumentSections";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { ProjectGallery } from "@/components/site/ProjectGallery";
 
 export default function Home() {
   return (
@@ -23,7 +23,7 @@ export default function Home() {
         <HighlightsSection />
         <InvestorsSection />
         <DocumentsSection />
-        <GallerySection />
+        <ProjectGallery />
         <ContactSection />
         <SourcesSection />
       </main>

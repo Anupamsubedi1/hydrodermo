@@ -36,11 +36,16 @@ async function loadPlaywright() {
 async function capture(browser, { width, height, dpr, mobile }) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr, isMobile: mobile, hasTouch: mobile });
   const page = await context.newPage();
+  // Hold the autoplay opening at its first frame so the poster matches the
+  // framing the canvas shows when it takes over.
+  await page.addInitScript(() => {
+    window.__beniHoldIntro = true;
+  });
   await page.goto(baseUrl, { waitUntil: "load" });
   await page.waitForSelector(".cine-canvas.is-ready", { timeout: 120000 });
   // Let the water settle and hide every HTML layer over the canvas.
   await page.waitForTimeout(1500);
-  await page.addStyleTag({ content: ".cine-chapters, .cine-chrome, .cine-grade, header, .cine-poster { visibility: hidden !important; }" });
+  await page.addStyleTag({ content: ".cine-chapters, .cine-chrome, .cine-grade, .intro-skip, header, .cine-poster { visibility: hidden !important; }" });
   await page.waitForTimeout(300);
   const canvas = await page.$(".cine-canvas canvas");
   const buffer = await canvas.screenshot({ type: "png" });

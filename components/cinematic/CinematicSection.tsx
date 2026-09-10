@@ -5,7 +5,14 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { CHAPTER_COPY, HERO, PROPOSAL } from "@/content/site";
-import { SCENE_DESKTOP_MIN_WIDTH, SCENE_IDLE_TIMEOUT_MS } from "@/lib/cinematic/config";
+import {
+  INTRO_DURATION_S,
+  INTRO_READY_DEADLINE_MS,
+  INTRO_SKIP_S,
+  SCENE_DESKTOP_MIN_WIDTH,
+  SCENE_IDLE_TIMEOUT_MS,
+} from "@/lib/cinematic/config";
+import { createIntro } from "@/lib/cinematic/intro";
 import { createProgressStore, type MutableProgressStore } from "@/lib/cinematic/progress";
 import { degradeQuality, initialQuality, isSceneEligible, judgePerformance, readDeviceSignals } from "@/lib/cinematic/quality";
 import type { AnchorId, AnchorPosition, Chapter, SceneError, ScenePerformanceSample, SceneQuality } from "@/lib/cinematic/types";
@@ -46,6 +53,8 @@ export function CinematicSection() {
   const chapterEls = useRef<(HTMLDivElement | null)[]>([]);
   const anchorEls = useRef<Partial<Record<AnchorId, HTMLDivElement | null>>>({});
   const [store] = useState<MutableProgressStore>(() => createProgressStore(0));
+  // Mutated inside its own closure, so driving the camera costs no re-render.
+  const [intro] = useState(() => createIntro(0));
 
   const reduced = useReducedMotion();
   const [chapter, setChapter] = useState<Chapter>(0);
@@ -105,8 +114,14 @@ export function CinematicSection() {
       });
       store.jump(trigger.progress);
 
-      const tick = (_time: number, deltaTime: number) => {
-        store.advance(deltaTime / 1000);
+      // Real elapsed time, not GSAP's smoothed delta: lag smoothing would stall
+      // the damper on slow renderers exactly as it stalled the opening.
+      let lastTick = performance.now();
+      const tick = () => {
+        const now = performance.now();
+        const dt = (now - lastTick) / 1000;
+        lastTick = now;
+        store.advance(dt);
       };
       gsap.ticker.add(tick);
 
@@ -262,17 +277,125 @@ export function CinematicSection() {
     };
   }, [reduced, whenPosterLoaded]);
 
+  // ----- autoplay opening --------------------------------------------------
+  // The camera flies in on its own before the reader scrolls, with the header,
+  // hero copy and stage chrome held back so the first seconds are pure picture.
+  const sceneReadyRef = useRef(false);
+  const finishIntro = useRef<(fast: boolean) => void>(() => {});
+  const cancelIntro = useRef<() => void>(() => {});
+  /**
+   * The opening is driven from real elapsed time rather than a GSAP tween:
+   * GSAP's lag smoothing advances tweens by a fixed slice once frames run long,
+   * which would stretch a six-second move into minutes on a slow renderer.
+   */
+  const runIntro = useRef<(durationS: number, onDone: () => void) => void>(() => {});
+  useEffect(() => {
+    let frame = 0;
+    cancelIntro.current = () => cancelAnimationFrame(frame);
+    runIntro.current = (durationS, onDone) => {
+      cancelAnimationFrame(frame);
+      const from = intro.value;
+      const span = Math.max(0.001, 1 - from);
+      const started = performance.now();
+      const step = () => {
+        const t = Math.min(1, (performance.now() - started) / (durationS * 1000));
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        intro.set(from + span * eased);
+        if (t < 1) frame = requestAnimationFrame(step);
+        else onDone();
+      };
+      frame = requestAnimationFrame(step);
+    };
+    return () => cancelAnimationFrame(frame);
+  }, [intro]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const reveal = () => {
+      root.dataset.intro = "done";
+    };
+    if (reduced) {
+      intro.set(1);
+      reveal();
+      return () => {
+        delete root.dataset.intro;
+      };
+    }
+
+    root.dataset.intro = "running";
+
+    // Poster capture holds the opening at its first frame so the still and the
+    // canvas show the same framing (see scripts/capture-posters.mjs).
+    if ((window as { __beniHoldIntro?: boolean }).__beniHoldIntro) {
+      return () => {
+        delete root.dataset.intro;
+      };
+    }
+
+    let settled = false;
+    const listeners: Array<[string, EventListener]> = [];
+    const stopListening = () => {
+      listeners.forEach(([type, fn]) => window.removeEventListener(type, fn));
+      listeners.length = 0;
+    };
+    const end = (fast: boolean) => {
+      if (settled) return;
+      settled = true;
+      stopListening();
+      window.clearTimeout(deadline);
+      if (intro.done || !sceneReadyRef.current) {
+        cancelIntro.current();
+        intro.set(1);
+        reveal();
+        return;
+      }
+      runIntro.current(fast ? INTRO_SKIP_S : INTRO_DURATION_S, reveal);
+    };
+    finishIntro.current = end;
+
+    // Any deliberate input hands control straight back to the reader.
+    (["wheel", "touchstart", "keydown", "pointerdown"] as const).forEach((type) => {
+      const fn: EventListener = () => end(true);
+      window.addEventListener(type, fn, { once: true, passive: true });
+      listeners.push([type, fn]);
+    });
+    // If the scene never arrives, reveal the copy over the poster instead.
+    const deadline = window.setTimeout(() => {
+      if (!sceneReadyRef.current) end(true);
+    }, INTRO_READY_DEADLINE_MS);
+
+    return () => {
+      settled = true;
+      stopListening();
+      window.clearTimeout(deadline);
+      cancelIntro.current();
+      delete root.dataset.intro;
+    };
+  }, [reduced, intro]);
+
+  /** Starts the opening once the first real frame exists, so nothing is missed. */
+  const startIntro = useCallback(() => {
+    if (reduced || sceneReadyRef.current) return;
+    if ((window as { __beniHoldIntro?: boolean }).__beniHoldIntro) return;
+    sceneReadyRef.current = true;
+    runIntro.current(INTRO_DURATION_S, () => {
+      document.documentElement.dataset.intro = "done";
+    });
+  }, [reduced]);
+
   // ----- scene callbacks ---------------------------------------------------
   const handleReady = useCallback(() => {
     setMode("scene");
     setImageryReady(true);
-  }, []);
+    startIntro();
+  }, [startIntro]);
 
   const handleError = useCallback((error: SceneError) => {
     if (process.env.NODE_ENV !== "production") console.warn("[cinematic] scene unavailable:", error.kind, error.message);
     sceneDisabledForPage = true;
     setImageryReady(false);
     setMode("journey");
+    finishIntro.current(true);
   }, []);
 
   const handlePerformance = useCallback((sample: ScenePerformanceSample) => {
@@ -298,7 +421,11 @@ export function CinematicSection() {
     }
   }, []);
 
-  const handleJourneyLoaded = useCallback(() => setImageryReady(true), []);
+  const handleJourneyLoaded = useCallback(() => {
+    setImageryReady(true);
+    // The 2D path has no camera to fly, so the copy appears at once.
+    finishIntro.current(true);
+  }, []);
 
   const skipToContent = useCallback((event: React.MouseEvent<HTMLAnchorElement>) => {
     const target = document.getElementById("project-heading");
@@ -324,6 +451,7 @@ export function CinematicSection() {
           <div className={`cine-canvas${mode === "scene" ? " is-ready" : ""}`} aria-hidden="true">
             <SceneLoader
               progress={store}
+              intro={intro.state}
               active={active}
               quality={quality}
               onReady={handleReady}
@@ -338,12 +466,14 @@ export function CinematicSection() {
 
         <ChapterOverlays chapter={chapter} activeStation={station} refs={chapterEls} anchorRefs={anchorEls} />
 
+        <button type="button" className="intro-skip" onClick={() => finishIntro.current(true)}>
+          Skip intro
+        </button>
+
         <a href="#project" className="cine-chrome cine-skip motion-only" onClick={skipToContent}>
           Skip animation
         </a>
-        <p className="cine-chrome pointer-events-none left-[var(--gutter)] bottom-[calc(env(safe-area-inset-bottom)+1.6rem)] hidden text-[0.72rem] tracking-[0.04em] text-[var(--on-dark-faint)] lg:block">
-          {PROPOSAL.illustrationLabel} · real-time 3D, not a photograph of the plant
-        </p>
+        <p className="cine-chrome cine-credit">{PROPOSAL.illustrationLabel} · real-time 3D, not a photograph of the plant</p>
         <div className="cine-chrome cine-scrollhint motion-only" aria-hidden="true">
           <span>{HERO.scrollHint}</span>
           <i />
@@ -354,23 +484,21 @@ export function CinematicSection() {
       </div>
 
       {/* Reduced motion: the complete story as a static figure directly after the hero. */}
-      <div className="reduced-only container py-16 text-[var(--on-dark)]">
-        <p className="eyebrow text-[var(--river-300)]">{PROPOSAL.schematicLabel}</p>
-        <h2 className="display-sm mt-3">{CHAPTER_COPY[5].title}</h2>
+      <div className="reduced-only container py-14 text-[var(--on-dark)] sm:py-16">
+        <h2 className="display-sm">{CHAPTER_COPY[5].title}</h2>
         <p className="mt-4 max-w-[40rem] text-[var(--on-dark-muted)]">{CHAPTER_COPY[5].body}</p>
         <figure className="mt-8 rounded-lg bg-[radial-gradient(120%_90%_at_60%_45%,#1b2b2b_0%,#0f1a1b_55%,#07171b_100%)] p-4 sm:p-8">
           <HydroSchematic />
           <figcaption className="mt-3 text-[0.8rem] text-[var(--on-dark-faint)]">{PROPOSAL.schematicLabel} — not an engineering model of Beni&apos;s equipment.</figcaption>
         </figure>
-        <ol className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {CHAPTER_COPY[5].steps.map((s, i) => (
+        <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {CHAPTER_COPY[5].steps.map((s) => (
             <li key={s.id}>
-              <span className="numeral text-[0.8rem] text-[var(--river-300)]">0{i + 1}</span>
-              <p className="mt-1 font-semibold">{s.label}</p>
+              <p className="font-semibold">{s.label}</p>
               <p className="mt-1 text-[0.95rem] text-[var(--on-dark-muted)]">{s.text}</p>
             </li>
           ))}
-        </ol>
+        </ul>
         <p className="mt-10 max-w-[40rem] text-[var(--on-dark-muted)]">{CHAPTER_COPY[6].body}</p>
       </div>
     </section>

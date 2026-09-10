@@ -48,11 +48,10 @@ function FactGrid({ facts }: { facts: readonly Fact[] }) {
   );
 }
 
-function SectionHeading({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children?: React.ReactNode }) {
+function SectionHeading({ id, title, children }: { id: string; title: string; children?: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <p className="eyebrow text-[var(--forest-600)]">{eyebrow}</p>
-      <h2 id={id} tabIndex={-1} className="h2 mt-3 scroll-mt-24 outline-none">
+      <h2 id={id} tabIndex={-1} className="h2 scroll-mt-24 outline-none">
         {title}
       </h2>
       {children}
@@ -65,7 +64,7 @@ export function ProjectSection() {
     <section id="project" aria-labelledby="project-heading" className="section container scroll-mt-16">
       <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
         <div>
-          <SectionHeading id="project-heading" eyebrow="Project overview" title={PROJECT_OVERVIEW.heading}>
+          <SectionHeading id="project-heading" title={PROJECT_OVERVIEW.heading}>
             <p className="lede mt-6 text-[var(--ink)]">{PROJECT_OVERVIEW.intro}</p>
           </SectionHeading>
         </div>
@@ -96,7 +95,7 @@ export function HighlightsSection() {
   return (
     <section id="highlights" aria-labelledby="highlights-heading" className="bg-[var(--paper-100)] scroll-mt-16">
       <div className="section container">
-        <SectionHeading id="highlights-heading" eyebrow="Verified figures" title="Project highlights">
+        <SectionHeading id="highlights-heading" title="Project highlights">
           <p className="mt-5 max-w-2xl text-[var(--ink-muted)]">
             Figures are quoted from the company&apos;s website and ICRA Nepal&apos;s published rating rationales. Installed capacity
             describes the size of the plant; it is not a live generation figure.
@@ -115,7 +114,7 @@ export function InvestorsSection() {
     <section id="investors" aria-labelledby="investors-heading" className="section container scroll-mt-16">
       <div className="grid gap-12 lg:grid-cols-[1fr_1.35fr] lg:gap-20">
         <div>
-          <SectionHeading id="investors-heading" eyebrow="For shareholders and applicants" title={INVESTORS.heading}>
+          <SectionHeading id="investors-heading" title={INVESTORS.heading}>
             <p className="mt-6 text-[var(--ink-muted)]">{INVESTORS.intro}</p>
           </SectionHeading>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -142,7 +141,7 @@ export function DocumentsSection() {
   return (
     <section id="documents" aria-labelledby="documents-heading" className="bg-[var(--paper-100)] scroll-mt-16">
       <div className="section container">
-        <SectionHeading id="documents-heading" eyebrow="Documents" title="Prospectus, notices and ratings">
+        <SectionHeading id="documents-heading" title="Prospectus, notices and ratings">
           <p className="mt-5 max-w-2xl text-[var(--ink-muted)]">
             Every link below opens the publisher&apos;s own file. Nepali-language documents are marked; no document has been
             altered or re-hosted for this concept.
@@ -201,7 +200,7 @@ export function DocumentsSection() {
 export function GallerySection() {
   return (
     <section id="gallery" aria-labelledby="gallery-heading" className="section container scroll-mt-16">
-      <SectionHeading id="gallery-heading" eyebrow="Photography" title={GALLERY.heading} />
+      <SectionHeading id="gallery-heading" title={GALLERY.heading} />
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {["Headworks", "Penstock", "Powerhouse"].map((label) => (
           <div
@@ -222,8 +221,7 @@ export function ContactSection() {
     <section id="contact" aria-labelledby="contact-heading" className="bg-[var(--forest-900)] text-[var(--on-dark)] scroll-mt-16">
       <div className="section container grid gap-10 lg:grid-cols-[1fr_1fr]">
         <div>
-          <p className="eyebrow text-[var(--river-300)]">{CONTACT.heading}</p>
-          <h2 id="contact-heading" tabIndex={-1} className="h2 mt-3 outline-none">
+          <h2 id="contact-heading" tabIndex={-1} className="h2 outline-none">
             {COMPANY.name}
           </h2>
           <p className="mt-5 max-w-md text-[var(--on-dark-muted)]">{CONTACT.intro}</p>

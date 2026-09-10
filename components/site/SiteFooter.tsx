@@ -1,4 +1,5 @@
 import { COMPANY, NAV, PROPOSAL } from "@/content/site";
+import { Wordmark } from "./Wordmark";
 
 export function SiteFooter() {
   return (
@@ -6,8 +7,8 @@ export function SiteFooter() {
       <div className="container section !pb-10">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <p className="text-[1.2rem] font-semibold tracking-[-0.01em]">{COMPANY.name}</p>
-            <p className="mt-2 max-w-sm text-[0.95rem] text-[var(--on-dark-muted)]">
+            <Wordmark tone="dark" size={52} />
+            <p className="mt-4 max-w-sm text-[0.95rem] text-[var(--on-dark-muted)]">
               {COMPANY.project} · {COMPANY.location}
             </p>
           </div>

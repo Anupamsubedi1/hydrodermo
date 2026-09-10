@@ -93,7 +93,7 @@ function SceneContents(props: HydroSceneProps) {
     if (current.active) c.time += dt;
     const progress = current.progress.current;
     try {
-      w.update(progress, c.time, camera as T.PerspectiveCamera, size.width / size.height);
+      w.update(progress, c.time, camera as T.PerspectiveCamera, size.width / size.height, current.intro.value);
       w.render();
       if (!ready.current) {
         ready.current = true;

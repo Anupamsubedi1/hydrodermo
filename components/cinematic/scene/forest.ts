@@ -12,32 +12,54 @@ export interface Forest {
 }
 
 function coniferGeometry(): T.BufferGeometry {
-  const trunk = new T.CylinderGeometry(0.22, 0.42, 3.2, 6, 1);
+  const trunk = new T.CylinderGeometry(0.18, 0.36, 3.7, 5, 1, true);
   trunk.translate(0, 1.6, 0);
+  const trunkColors = new Float32Array(trunk.attributes.position.count * 3);
+  for (let i = 0; i < trunk.attributes.position.count; i++) {
+    trunkColors.set([0.3, 0.23, 0.16], i * 3);
+  }
+  trunk.setAttribute("color", new T.BufferAttribute(trunkColors, 3));
+
+  // Staggered, uneven branch skirts break the repeated cone silhouette. The
+  // lower crowns get one extra ring, with fewer sides keeping the tree cheap.
+  const rnd = mulberry32(418);
   const tiers = [
-    { r: 2.7, h: 5.4, y: 4.6 },
-    { r: 2.05, h: 4.6, y: 7.6 },
-    { r: 1.35, h: 3.8, y: 10.2 },
-  ].map((t) => {
-    const g = new T.ConeGeometry(t.r, t.h, 7, 1);
+    { r: 2.7, h: 5.8, y: 4.8, sides: 7, rings: 2 },
+    { r: 2.0, h: 4.9, y: 7.5, sides: 6, rings: 2 },
+    { r: 1.2, h: 3.8, y: 10.0, sides: 5, rings: 1 },
+  ].map((t, tier) => {
+    const g = new T.ConeGeometry(t.r, t.h, t.sides, t.rings);
+    const pos = g.attributes.position as T.BufferAttribute;
+    const normals = g.attributes.normal as T.BufferAttribute;
+    const colors = new Float32Array(pos.count * 3);
+    const phase = rnd() * Math.PI * 2;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      const angle = Math.atan2(z, x);
+      const height = (y + t.h / 2) / t.h;
+      const branch = Math.sin(angle * 3 + phase) * 0.13 + Math.cos(angle * 5 - phase) * 0.09;
+      const shoulder = 1 + Math.sin(height * Math.PI) * 0.32;
+      const radius = (1 + branch) * shoulder;
+      const droop = (Math.sin(angle * 3 + phase + 0.8) * 0.22 + Math.cos(angle * 2 - phase) * 0.12) * (1 - height);
+      pos.setXYZ(i, x * radius + height * 0.19 * Math.sin(phase), y + droop, z * radius + height * 0.15 * Math.cos(phase));
+
+      // Muted tips and darker undersides give overlapping branches depth
+      // without another material, texture download or extra draw call.
+      const underside = normals.getY(i) < -0.5;
+      const shade = underside ? 0.42 : 0.62 + height * 0.22 + branch * 0.2 + tier * 0.025;
+      colors.set([shade * 0.96, shade, shade * 0.91], i * 3);
+    }
+    g.setAttribute("color", new T.BufferAttribute(colors, 3));
+    g.rotateY(phase);
     g.translate(0, t.y, 0);
+    g.computeVertexNormals();
     return g;
   });
   const parts = [trunk, ...tiers];
-  const colored = parts.map((g, i) => {
-    const count = g.attributes.position.count;
-    const col = new Float32Array(count * 3);
-    const c = i === 0 ? [0.36, 0.26, 0.18] : [1, 1, 1];
-    for (let k = 0; k < count; k++) {
-      col[k * 3] = c[0];
-      col[k * 3 + 1] = c[1];
-      col[k * 3 + 2] = c[2];
-    }
-    g.setAttribute("color", new T.BufferAttribute(col, 3));
-    return g;
-  });
-  const merged = mergeGeometries(colored, false);
-  colored.forEach((g) => g.dispose());
+  const merged = mergeGeometries(parts, false);
+  parts.forEach((g) => g.dispose());
   if (!merged) throw new Error("Failed to merge conifer geometry");
   return merged;
 }
@@ -115,9 +137,9 @@ export async function createForest(treeCount: number, field: HeightField, yieldF
     dummy.scale.set(s * (0.9 + rnd() * 0.25), s * (0.9 + rnd() * 0.4), s * (0.9 + rnd() * 0.25));
     dummy.updateMatrix();
     trees.setMatrixAt(placed, dummy.matrix);
-    const hue = 0.34 + (rnd() - 0.5) * 0.07;
-    const light = 0.12 + rnd() * 0.12 + smoothstep(120, 250, above) * 0.06;
-    color.setHSL(hue, 0.34 + rnd() * 0.18, light);
+    const hue = 0.345 + (rnd() - 0.5) * 0.085;
+    const light = 0.12 + rnd() * 0.095 + smoothstep(120, 250, above) * 0.025;
+    color.setHSL(hue, 0.25 + rnd() * 0.16, light);
     trees.setColorAt(placed, color);
     placed++;
   }

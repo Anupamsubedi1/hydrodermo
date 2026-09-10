@@ -4,15 +4,16 @@
 export const SUN = { elevation: 15, azimuth: 56 } as const;
 
 export const LOOK = {
-  fogDensity: 0.0005,
-  fogColor: "#b4c6cc",
-  sunIntensity: 2.6,
+  fogDensity: 0.00034,
+  fogColor: "#819a9e",
+  sunIntensity: 1.9,
   hemiSky: "#b9cfd8",
   hemiGround: "#2f3d31",
-  hemiIntensity: 0.42,
-  envIntensity: 0.42,
-  exposure: 0.8,
-  bloom: { strength: 0.18, radius: 0.45, threshold: 0.94 },
+  hemiIntensity: 0.36,
+  envIntensity: 0.34,
+  exposure: 0.64,
+  skyRadiance: 0.48,
+  bloom: { strength: 0.075, radius: 0.35, threshold: 1.2 },
   reflectionTexture: { high: 768, medium: 512 },
   shadowExtent: 420,
   concrete: "#a3a49d",

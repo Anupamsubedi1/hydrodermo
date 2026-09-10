@@ -42,8 +42,9 @@ const pointsFragment = /* glsl */ `
     float a = texture2D(uMap, gl_PointCoord).a * vAlpha;
     if (a < 0.003) discard;
     gl_FragColor = vec4(uColor, a);
-    #include <fog_fragment>
+    #include <tonemapping_fragment>
     #include <colorspace_fragment>
+    #include <fog_fragment>
   }
 `;
 
@@ -102,7 +103,7 @@ function particleField(sprite: T.Texture, count: number, opts: { color: string; 
 export function createValleyMist(sprite: T.Texture, scale: number): ParticleField {
   const count = Math.round(420 * scale);
   return particleField(sprite, count, {
-    color: "#dfe9e6",
+    color: "#a6bab8",
     rise: 0,
     place: (i, rnd) => {
       const z = -1100 + rnd() * 1500;
@@ -110,7 +111,7 @@ export function createValleyMist(sprite: T.Texture, scale: number): ParticleFiel
       const spread = riverHalfWidth(z) + 30 + rnd() * 160;
       const x = xc + (rnd() - 0.5) * 2 * spread;
       const y = (z < 0 ? 2 : -26) + rnd() * 34;
-      return [x, y, z, 26 + rnd() * 70, 0.05 + rnd() * 0.09];
+      return [x, y, z, 22 + rnd() * 58, 0.025 + rnd() * 0.045];
     },
   });
 }
@@ -164,8 +165,9 @@ const sheetFragment = /* glsl */ `
     alpha = min(1.0, alpha + foam * 0.5);
     vec3 col = mix(vec3(0.38, 0.58, 0.68), vec3(0.94, 0.97, 0.98), clamp(streak * 0.85 + foam * 0.6, 0.0, 1.0));
     gl_FragColor = vec4(col, alpha);
-    #include <fog_fragment>
+    #include <tonemapping_fragment>
     #include <colorspace_fragment>
+    #include <fog_fragment>
   }
 `;
 

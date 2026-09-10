@@ -28,10 +28,9 @@ export function ChapterOverlays({ chapter, activeStation, refs, anchorRefs }: Ch
   return (
     <div className="cine-chapters">
       <div ref={setRef(0)} className="cine-chapter cine-chapter--hero hero-rise" data-chapter="0" data-active={chapter === 0}>
-        <p className="eyebrow text-[var(--river-300)]">{HERO.eyebrow}</p>
-        <h1 className="display mt-4 text-[var(--on-dark)]">{HERO.headline}</h1>
-        <p className="lede mt-5 max-w-[34rem] text-[var(--on-dark-muted)]">{HERO.supporting}</p>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <h1 className="display text-[var(--on-dark)]">{HERO.headline}</h1>
+        <p className="lede mt-4 max-w-[34rem] text-[var(--on-dark-muted)] sm:mt-5">{HERO.supporting}</p>
+        <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
           <a className="btn btn-primary" href={HERO.primaryCta.href}>
             {HERO.primaryCta.label}
           </a>
@@ -54,24 +53,20 @@ export function ChapterOverlays({ chapter, activeStation, refs, anchorRefs }: Ch
             aria-hidden={!active}
             inert={!active}
           >
-            <p className="eyebrow text-[var(--river-300)]">{copy.kicker}</p>
-            <h2 className="display-sm mt-3 text-[var(--on-dark)]">{copy.title}</h2>
-            <p className="mt-4 max-w-[30rem] text-[1.02rem] leading-relaxed text-[var(--on-dark-muted)]">{copy.body}</p>
+            <h2 className="display-sm text-[var(--on-dark)]">{copy.title}</h2>
+            <p className="mt-3 max-w-[30rem] text-[0.98rem] leading-relaxed text-[var(--on-dark-muted)] sm:mt-4 sm:text-[1.02rem]">{copy.body}</p>
             {index === 5 ? (
-              <ol className="cine-steps" aria-label="Steps">
+              <ul className="cine-steps">
                 {machine.steps.map((step, s) => (
                   <li key={step.id} className="cine-step" data-on={activeStation >= s}>
-                    <span className="idx">0{s + 1}</span>
-                    <span>
-                      <span className="font-semibold">{step.label}</span>
-                      <small>{step.text}</small>
-                    </span>
+                    <span className="font-semibold">{step.label}</span>
+                    <small>{step.text}</small>
                   </li>
                 ))}
-              </ol>
+              </ul>
             ) : null}
             {index === 6 ? (
-              <div className="mt-7 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-col gap-3 sm:mt-7 sm:flex-row sm:flex-wrap">
                 <a className="btn btn-primary" href="#investors">
                   Investor information
                 </a>
@@ -80,7 +75,7 @@ export function ChapterOverlays({ chapter, activeStation, refs, anchorRefs }: Ch
                 </a>
               </div>
             ) : null}
-            {index >= 4 ? <p className="mt-4 text-[0.75rem] text-[var(--on-dark-faint)]">{PROPOSAL.schematicLabel}</p> : null}
+            {index >= 4 ? <p className="mt-4 text-[0.72rem] text-[var(--on-dark-faint)]">{PROPOSAL.schematicLabel}</p> : null}
           </div>
         );
       })}

@@ -78,8 +78,19 @@ export interface AnchorPosition {
  * resources; the wrapper owns progress, chapters, eligibility, quality
  * decisions, fallback presentation, and all HTML/accessibility.
  */
+/**
+ * Autoplay opening. The wrapper animates `value` from 0 to 1 without any
+ * re-render; the scene reads it every frame. 1 means the camera is fully on the
+ * scroll path.
+ */
+export interface IntroState {
+  value: number;
+}
+
 export interface HydroSceneProps {
   progress: ProgressStore;
+  /** Mutable, read every frame; never triggers a React update. */
+  intro: IntroState;
   /** True only while the stage intersects the viewport and the document is visible. */
   active: boolean;
   quality: SceneQuality;

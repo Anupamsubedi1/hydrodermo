@@ -46,6 +46,16 @@ export const PROGRESS_MAX_FRAME = 0.4;
 
 /** Deferred scene mount: wait for idle, but never longer than this after the poster is painted. */
 export const SCENE_IDLE_TIMEOUT_MS = 1800;
+
+/** Autoplay opening: seconds of camera move before the reader takes over by scrolling. */
+export const INTRO_DURATION_S = 6;
+/** How quickly the opening finishes when the reader scrolls or presses a key during it. */
+export const INTRO_SKIP_S = 0.7;
+/**
+ * If the scene has not produced a frame by now, the opening is abandoned and the
+ * hero copy is revealed over the poster. The page must never sit wordless.
+ */
+export const INTRO_READY_DEADLINE_MS = 3500;
 /** Minimum width for the high/medium tiers; below it phones get the low tier. */
 export const SCENE_DESKTOP_MIN_WIDTH = 1024;
 

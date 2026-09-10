@@ -51,7 +51,6 @@ export const PROPOSAL = {
 } as const;
 
 export const HERO = {
-  eyebrow: "Beni Hydropower Project Limited",
   headline: "From Himalayan water to lasting energy.",
   supporting:
     "A 19.8 MW run-of-river plant on the Solu Khola in Solukhumbu, delivering power to Nepal's national grid since 2023.",
@@ -65,37 +64,31 @@ export const HERO = {
 export const CHAPTER_COPY = [
   {
     id: "flight",
-    kicker: "Solukhumbu, Nepal",
     title: "From Himalayan water to lasting energy.",
     body: "Beni Hydropower Project Limited operates the Upper Solu Khola Hydropower Project, a run-of-river scheme on a snow-fed river below the Numbur range.",
   },
   {
     id: "approach",
-    kicker: "Upper Solu Khola",
     title: "A river that keeps flowing.",
     body: "Run-of-river means the Solu Khola is diverted, not stored: water is taken at a low weir, carried to the powerhouse and returned to the river a short distance downstream.",
   },
   {
     id: "reveal",
-    kicker: "Headworks — concept visualisation",
     title: "182 metres of head.",
     body: "From intake to turbine the water falls about 182 metres. That drop, at a design discharge of roughly 12 cubic metres per second, is where the energy comes from.",
   },
   {
     id: "powerhouse",
-    kicker: "Powerhouse and grid",
     title: "Three units. One grid.",
     body: "The powerhouse feeds the Nepal Electricity Authority network through the Tingla substation under a long-term power purchase agreement.",
   },
   {
     id: "cutaway",
-    kicker: "How hydropower works — illustrative",
     title: "Inside the powerhouse.",
     body: "What follows is an illustration of the generation process, not an engineering model of Beni's equipment.",
   },
   {
     id: "machine",
-    kicker: "How hydropower works — illustrative",
     title: "Water in. Electricity out.",
     body: "Pressurised water enters the spiral casing, spins the Francis runner, the shaft drives the generator, and a transformer steps the voltage up for the grid.",
     steps: [
@@ -107,7 +100,6 @@ export const CHAPTER_COPY = [
   },
   {
     id: "settle",
-    kicker: "In operation since June 2023",
     title: "19.8 MW installed. 18.236 MW under PPA.",
     body: "Installed capacity describes plant size, not live output. Energy is sold to the Nepal Electricity Authority under predetermined tariffs.",
   },
